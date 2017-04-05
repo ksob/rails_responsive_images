@@ -18,18 +18,24 @@ namespace :rails_responsive_images do
     RakeFileUtils.verbose(false)
     start_time = Time.now
 
-    file_list = ::FileList.new(Rails.root.join('app', 'assets', 'images/**/*.{gif,jpeg,jpg,png}').to_s) do |f|
-      f.exclude(/(responsive_images_)\d+/)
-    end
+    image_paths = Rails.application.config.assets.paths.select { |path| path.to_s.match(/images$/) }
 
-    puts "\nResize #{ file_list.size } image files."
+    image_paths.each do |path|
+      file_list = ::FileList.new(File.join(path, '**/*.{gif,jpeg,jpg,png}').to_s) do |f|
+        f.exclude(/(responsive_images_)\d+/)
+      end
 
-    ::RailsResponsiveImages.configuration.image_sizes.each do |size|
-      file_list.to_a.each do |original_filepath|
-        filepath = original_filepath.gsub(Rails.root.join('app', 'assets', 'images').to_s, '')
-        responsive_filepath = Rails.root.join('app', 'assets', 'images', "responsive_images_#{size}", filepath.sub(/\A\//, ''))
-        ::RailsResponsiveImages::Image.instance.create_responsive_folder!(responsive_filepath)
-        ::RailsResponsiveImages::Image.instance.generate_responsive_image!(original_filepath, size, responsive_filepath)
+      relative_path = path.gsub(Rails.root.to_s, '')
+
+      puts "Resize #{ file_list.size } image files in #{relative_path}."
+
+      ::RailsResponsiveImages.configuration.image_sizes.each do |size|
+        file_list.to_a.each do |original_filepath|
+          filepath = original_filepath.gsub(path, '')
+          responsive_filepath = Rails.root.join('app', 'assets', 'images', "responsive_images_#{size}", filepath.sub(/\A\//, ''))
+          ::RailsResponsiveImages::Image.instance.create_responsive_folder!(responsive_filepath)
+          ::RailsResponsiveImages::Image.instance.generate_responsive_image!(original_filepath, size, responsive_filepath)
+        end
       end
     end
 
