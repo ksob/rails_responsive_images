@@ -27,10 +27,8 @@ module RailsResponsiveImages
   end
 end
 
-
-ActionView::Helpers::AssetTagHelper.module_eval do
-
-  def image_tag_with_responsiveness(path, options = {})
+module ResponsiveImageTagFunctionality
+  def image_tag(path, options = {})
     options = options.dup
     responsive = options.delete(:responsive) { false }
     if responsive
@@ -40,12 +38,14 @@ ActionView::Helpers::AssetTagHelper.module_eval do
           responsive_image_path = image_path("responsive_images_#{size}/#{original_filepath}")
           concat content_tag(:source, '', media: "(max-width: #{size}px)", srcset: responsive_image_path)
         end
-        concat image_tag_without_responsiveness(path, options)
+        concat super
       end
     else
-      image_tag_without_responsiveness(path, options)
+      super
     end
   end
+end
 
-  alias_method_chain :image_tag, :responsiveness
+ActionView::Helpers::AssetTagHelper.module_eval do
+  prepend ResponsiveImageTagFunctionality
 end
