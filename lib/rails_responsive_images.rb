@@ -40,4 +40,14 @@ ActionView::Helpers::AssetTagHelper.module_eval do
     options[:width], options[:height] = extract_dimensions(options.delete(:size)) if options[:size]
     tag("img", options)
   end
+  
+  def resolve_image_source(source, skip_pipeline)
+    if source.is_a?(Symbol) || source.is_a?(String)
+      path_to_image(source, skip_pipeline: skip_pipeline)
+    else
+      polymorphic_url(source)
+    end
+  rescue NoMethodError => e
+    raise ArgumentError, "Can't resolve image into URL: #{e}"
+  end
 end
