@@ -30,7 +30,7 @@ end
 module ResponsiveImageTagFunctionality
   def image_tag(path, options = {})
     options = options.dup
-    responsive = options.delete(:responsive) { false }
+    responsive = options.delete(:responsive) { true }
     if responsive
       content_tag :picture do
         original_filepath = path.sub(/\A\/assets/, '')
