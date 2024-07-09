@@ -23,22 +23,23 @@ end
 
 
 ActionView::Helpers::AssetTagHelper.module_eval do
-
-  def image_tag_with_responsiveness(source, options = {})
-    options = options.symbolize_keys
-    check_for_image_tag_errors(options)
+  
+  def image_tag_with_responsiveness(path, options = {})
+    options = options.dup
+    responsive = options.delete(:responsive) { true }
     skip_pipeline = options.delete(:skip_pipeline)
-
-    options[:src] = resolve_image_source(source, skip_pipeline)
-    original_file = source.sub(/^\/assets/, '')
-
-    options[:srcset] = RailsResponsiveImages.configuration.image_sizes.map do |size|
-      src_path = path_to_image("responsive_images_#{size}/#{original_file}", skip_pipeline: skip_pipeline)
-      "#{src_path} #{size}w"
-    end.join(", ")
-
-    options[:width], options[:height] = extract_dimensions(options.delete(:size)) if options[:size]
-    tag("img", options)
+    if responsive
+      content_tag :picture do
+        original_file = path.sub(/\A\/assets/, '')
+        ::RailsResponsiveImages.configuration.image_sizes.each do |size|
+          responsive_image_path = path_to_image("responsive_images_#{size}/#{original_file}", skip_pipeline: skip_pipeline)
+          concat content_tag(:source, '', media: "(max-width: #{size}px)", srcset: URI::Parser.new.escape(responsive_image_path))
+        end
+        concat image_tag(path, options = {})
+      end
+    else
+      image_tag(path, options = {})
+    end
   end
   
   def resolve_image_source(source, skip_pipeline)
